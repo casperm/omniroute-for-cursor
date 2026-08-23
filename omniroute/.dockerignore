@@ -1,0 +1,13 @@
+# Never send runtime state or secrets to the Docker build daemon.
+data/
+node_modules/
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+**/*.log
+**/db_backups/
+.env
+.env.*
+*.tar
+*.tar.gz
+.DS_Store

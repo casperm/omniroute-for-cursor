@@ -1,0 +1,52 @@
+# ==============================================================================
+# OmniRoute Production Alpine Dockerfile (v1.1 Pre-built Package)
+# Minimal footprint, ultra-fast image build (~20s), and zero compilation overhead
+# ==============================================================================
+
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Install native dependencies and runtime utilities
+RUN apk add --no-cache \
+    dumb-init \
+    su-exec \
+    python3 \
+    make \
+    g++ \
+    sqlite-dev \
+    libsecret-dev \
+    sqlite-libs \
+    ca-certificates \
+    tzdata \
+    libc6-compat \
+    gcompat
+
+# Build argument for package version (e.g. latest or specific version like 3.8.49)
+ARG OMNIROUTE_PKG_VERSION=latest
+
+# Install pre-built OmniRoute package globally and ensure permissions
+RUN npm install -g omniroute@${OMNIROUTE_PKG_VERSION} --no-audit --no-fund && \
+    chmod -R a+rx /usr/local/lib/node_modules /usr/local/bin
+
+# Create secure unprivileged system user
+RUN addgroup -g 10001 omniroute && \
+    adduser -u 10001 -G omniroute -s /bin/sh -D omniroute
+
+# Setup persistent directory
+RUN mkdir -p /app/data && \
+    chown -R omniroute:omniroute /app
+
+COPY --chown=omniroute:omniroute docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
+# Environment defaults
+ENV NODE_ENV=production
+ENV PORT=20128
+ENV DATA_DIR=/app/data
+ENV NEXT_TELEMETRY_DISABLED=1
+
+EXPOSE 20128
+
+ENTRYPOINT ["/usr/bin/dumb-init", "--", "/app/docker-entrypoint.sh"]
+CMD ["omniroute", "serve", "--no-open"]

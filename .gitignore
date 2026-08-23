@@ -1,0 +1,20 @@
+# Secrets & Environment variables
+.env
+*.env.local
+
+# Persistent container data
+omniroute/data/*
+!omniroute/data/.gitkeep
+
+# Logs
+nginx/logs/*
+!nginx/logs/.gitkeep
+*.log
+
+# Distribution & build outputs
+dist/
+*.tar.gz
+
+# OS specific files
+.DS_Store
+Thumbs.db

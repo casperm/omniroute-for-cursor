@@ -1,0 +1,77 @@
+services:
+  # ----------------------------------------------------------------------------
+  # 1. OmniRoute AI Gateway (Custom Fast Alpine / Bun Runtime)
+  # ----------------------------------------------------------------------------
+  omniroute:
+    build:
+      context: ./omniroute
+      dockerfile: ${OMNIROUTE_DOCKERFILE:-Dockerfile.v1.1.bun}
+      args:
+        - OMNIROUTE_PKG_VERSION=${OMNIROUTE_PKG_VERSION:-latest}
+    pull_policy: build
+    image: ${OMNIROUTE_IMAGE:-omniroute}:${OMNIROUTE_PKG_VERSION:-latest}
+    container_name: omniroute-core
+    restart: unless-stopped
+    stop_grace_period: 40s
+    environment:
+      - INITIAL_PASSWORD=${INITIAL_PASSWORD:-ChangeThisAdminPassword123!}
+      - JWT_SECRET=${JWT_SECRET:-generate_random_secret_with_openssl}
+      - PORT=${OMNIROUTE_PORT:-20128}
+      - DATA_DIR=/app/data
+      - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
+      - BASE_URL=${BASE_URL:-${NEXT_PUBLIC_BASE_URL}}
+    volumes:
+      - ./omniroute/data:/app/data
+    networks:
+      - omniroute_net
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://127.0.0.1:20128/ || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ----------------------------------------------------------------------------
+  # 2. Nginx Reverse Proxy, Security Shield & SSE Handler
+  # ----------------------------------------------------------------------------
+  nginx:
+    image: nginx:alpine
+    container_name: omniroute-nginx
+    restart: unless-stopped
+    depends_on:
+      omniroute:
+        condition: service_healthy
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/includes:/etc/nginx/includes:ro
+      - ./nginx/logs:/var/log/nginx
+    networks:
+      - omniroute_net
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://127.0.0.1/health || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # ----------------------------------------------------------------------------
+  # 3. Cloudflare Tunnel (Inbound Gateway without Opening Firewall Ports)
+  # ----------------------------------------------------------------------------
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: omniroute-cloudflared
+    restart: unless-stopped
+    depends_on:
+      nginx:
+        condition: service_healthy
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    networks:
+      - omniroute_net
+
+# ------------------------------------------------------------------------------
+# Persistent Storage & Networks
+
+
+networks:
+  omniroute_net:
