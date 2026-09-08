@@ -12,49 +12,7 @@
 
 ## 🏛 アーキテクチャ
 
-```mermaid
-flowchart LR
-    subgraph Clients["クライアント"]
-        Cursor[Cursor IDE / OpenAI SDK]
-        AdminBrowser[管理者ブラウザ]
-    end
-
-    subgraph Cloudflare["Cloudflare エッジネットワーク"]
-        CF_Edge["Cloudflare Edge (HTTPS/WAF/DDoS)"]
-    end
-
-    subgraph Host["ホストマシン (Docker Compose)"]
-        subgraph TunnelContainer["Cloudflare Tunnel"]
-            Cloudflared["cloudflared\n(アウトバウンド暗号化トンネル)"]
-        end
-
-        subgraph NginxContainer["Nginx リバースプロキシ"]
-            Nginx["Nginx エンジン"]
-            RealIP["クライアント実 IP 復元\n(CF-Connecting-IP)"]
-            RateLimit["多層レート制限・保護"]
-            SSE["SSE ストリーミング (バッファ無効)"]
-        end
-
-        subgraph OmniRouteContainer["OmniRoute (Alpine / Bun)"]
-            Gateway["OmniRoute コアエンジン (ポート 20128)"]
-            DB[(永続化 SQLite データボリューム)]
-        end
-    end
-
-    subgraph Providers["アップストリーム AI プロバイダー"]
-        OpenAI[OpenAI / Anthropic / Groq / Google / DeepSeek]
-    end
-
-    Cursor -->|HTTPS /v1/...| CF_Edge
-    AdminBrowser -->|HTTPS / または /dashboard| CF_Edge
-    CF_Edge --> Cloudflared
-    Cloudflared -->|http://nginx:80| Nginx
-    Nginx --> RealIP --> RateLimit
-    RateLimit -->|/v1/* (API リクエスト)| SSE --> Gateway
-    RateLimit -->|/ (ダッシュボードログイン)| Gateway
-    Gateway --> DB
-    Gateway --> Providers
-```
+![Architecture Overview](images/architecture_overview.png)
 
 ---
 

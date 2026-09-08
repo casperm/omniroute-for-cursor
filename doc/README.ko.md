@@ -12,49 +12,7 @@
 
 ## 🏛 아키텍처 구성
 
-```mermaid
-flowchart LR
-    subgraph Clients["클라이언트"]
-        Cursor[Cursor IDE / OpenAI SDK]
-        AdminBrowser[관리자 브라우저]
-    end
-
-    subgraph Cloudflare["Cloudflare 엣지 네트워크"]
-        CF_Edge["Cloudflare Edge (HTTPS/WAF/DDoS)"]
-    end
-
-    subgraph Host["호스트 머신 (Docker Compose)"]
-        subgraph TunnelContainer["Cloudflare Tunnel"]
-            Cloudflared["cloudflared\n(아웃바운드 암호화 터널)"]
-        end
-
-        subgraph NginxContainer["Nginx 리버스 프록시"]
-            Nginx["Nginx 엔진"]
-            RealIP["실제 클라이언트 IP 추출\n(CF-Connecting-IP)"]
-            RateLimit["다계층 속도 제한 및 보호"]
-            SSE["SSE 스트리밍 (버퍼링 비활성화)"]
-        end
-
-        subgraph OmniRouteContainer["OmniRoute (Alpine / Bun)"]
-            Gateway["OmniRoute 코어 엔진 (포트 20128)"]
-            DB[(영구 SQLite 데이터 볼륨)]
-        end
-    end
-
-    subgraph Providers["업스트림 AI 대형 모델 제공업체"]
-        OpenAI[OpenAI / Anthropic / Groq / Google / DeepSeek]
-    end
-
-    Cursor -->|HTTPS /v1/...| CF_Edge
-    AdminBrowser -->|HTTPS / 또는 /dashboard| CF_Edge
-    CF_Edge --> Cloudflared
-    Cloudflared -->|http://nginx:80| Nginx
-    Nginx --> RealIP --> RateLimit
-    RateLimit -->|/v1/* (API 요청)| SSE --> Gateway
-    RateLimit -->|/ (대시보드 로그인)| Gateway
-    Gateway --> DB
-    Gateway --> Providers
-```
+![Architecture Overview](images/architecture_overview.png)
 
 ---
 

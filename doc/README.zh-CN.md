@@ -12,49 +12,7 @@
 
 ## 🏛 架构设计
 
-```mermaid
-flowchart LR
-    subgraph Clients["客户端"]
-        Cursor[Cursor IDE / OpenAI SDK]
-        AdminBrowser[管理员浏览器]
-    end
-
-    subgraph Cloudflare["Cloudflare 边缘网络"]
-        CF_Edge["Cloudflare Edge (HTTPS/WAF/DDoS)"]
-    end
-
-    subgraph Host["宿主机 (Docker Compose)"]
-        subgraph TunnelContainer["Cloudflare Tunnel"]
-            Cloudflared["cloudflared\n(出站加密隧道)"]
-        end
-
-        subgraph NginxContainer["Nginx 反向代理"]
-            Nginx["Nginx 引擎"]
-            RealIP["真实客户端 IP 提取\n(CF-Connecting-IP)"]
-            RateLimit["多层限流与防滥用"]
-            SSE["SSE 流式传输 (零缓冲)"]
-        end
-
-        subgraph OmniRouteContainer["OmniRoute (Alpine / Bun)"]
-            Gateway["OmniRoute 核心引擎 (端口 20128)"]
-            DB[(持久化 SQLite 数据卷)]
-        end
-    end
-
-    subgraph Providers["上游 AI 大模型提供商"]
-        OpenAI[OpenAI / Anthropic / Groq / Google / DeepSeek]
-    end
-
-    Cursor -->|HTTPS /v1/...| CF_Edge
-    AdminBrowser -->|HTTPS / 或 /dashboard| CF_Edge
-    CF_Edge --> Cloudflared
-    Cloudflared -->|http://nginx:80| Nginx
-    Nginx --> RealIP --> RateLimit
-    RateLimit -->|/v1/* (API 请求)| SSE --> Gateway
-    RateLimit -->|/ (仪表盘登录)| Gateway
-    Gateway --> DB
-    Gateway --> Providers
-```
+![Architecture Overview](images/architecture_overview.png)
 
 ---
 

@@ -12,49 +12,7 @@ This setup allows tools like **Cursor IDE**, **Claude Code**, and custom OpenAI 
 
 ## 🏛 Architecture
 
-```mermaid
-flowchart LR
-    subgraph Clients["Clients"]
-        Cursor[Cursor IDE / OpenAI SDK]
-        AdminBrowser[Admin Browser]
-    end
-
-    subgraph Cloudflare["Cloudflare Edge Network"]
-        CF_Edge["Cloudflare Edge (HTTPS/WAF/DDoS)"]
-    end
-
-    subgraph Host["Host Machine (Docker Compose)"]
-        subgraph TunnelContainer["Cloudflare Tunnel"]
-            Cloudflared["cloudflared\n(Outbound encrypted tunnel)"]
-        end
-
-        subgraph NginxContainer["Nginx Reverse Proxy"]
-            Nginx["Nginx Engine"]
-            RealIP["Real IP Extractor\n(CF-Connecting-IP)"]
-            RateLimit["Rate Limiter & Anti-Abuse"]
-            SSE["SSE Streaming (No Buffering)"]
-        end
-
-        subgraph OmniRouteContainer["OmniRoute (Alpine / Bun)"]
-            Gateway["OmniRoute Engine (Port 20128)"]
-            DB[(Persistent Data Volume)]
-        end
-    end
-
-    subgraph Providers["AI Providers"]
-        OpenAI[OpenAI / Anthropic / Groq / Google / DeepSeek]
-    end
-
-    Cursor -->|HTTPS /v1/...| CF_Edge
-    AdminBrowser -->|HTTPS / or /dashboard| CF_Edge
-    CF_Edge --> Cloudflared
-    Cloudflared -->|http://nginx:80| Nginx
-    Nginx --> RealIP --> RateLimit
-    RateLimit -->|/v1/* (API Requests)| SSE --> Gateway
-    RateLimit -->|/ (Dashboard Login)| Gateway
-    Gateway --> DB
-    Gateway --> Providers
-```
+![Architecture Overview](doc/images/architecture_overview.png)
 
 ---
 
