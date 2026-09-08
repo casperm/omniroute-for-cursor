@@ -319,12 +319,11 @@ setup_builder() {
         exit 1
     fi
 
-    # Check current builder; if using legacy default without multi-arch, create or use container builder
+    # Check current builder; ensure a dedicated container builder exists for multi-arch
     local current_builder
-    current_builder=$(docker buildx inspect 2>/dev/null | grep -E '^Name:' | awk '{print $2}' || true)
+    current_builder=$(docker buildx inspect 2>/dev/null | grep -E '^Name:' | head -n 1 | awk '{print $2}' || true)
     
-    # If default builder or cannot cross-build, ensure a container builder exists
-    if [ -z "${current_builder}" ] || [ "${current_builder}" = "default" ]; then
+    if [ -z "${current_builder}" ] || [ "${current_builder}" = "default" ] || [ "${current_builder}" = "colima" ]; then
         if ! docker buildx inspect omniroute-builder >/dev/null 2>&1; then
             log_info "Creating dedicated multi-platform builder instance (omniroute-builder)..."
             docker buildx create --name omniroute-builder --driver docker-container --use
@@ -333,7 +332,7 @@ setup_builder() {
         fi
         docker buildx inspect --bootstrap >/dev/null 2>&1 || true
     fi
-    log_success "Buildx builder ready: $(docker buildx inspect | grep -E '^Name:' | awk '{print $2}')"
+    log_success "Buildx builder ready: $(docker buildx inspect 2>/dev/null | grep -E '^Name:' | head -n 1 | awk '{print $2}')"
 }
 
 setup_builder
