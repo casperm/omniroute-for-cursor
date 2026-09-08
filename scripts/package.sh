@@ -63,6 +63,14 @@ cp "${ROOT_DIR}/.env.example" "${BUILD_DIR}/package/"
 cp -r "${ROOT_DIR}/nginx" "${BUILD_DIR}/package/"
 cp -r "${ROOT_DIR}/omniroute" "${BUILD_DIR}/package/"
 
+# Clean any local runtime data, databases, or logs from the distribution package
+rm -rf "${BUILD_DIR}/package/omniroute/data"
+mkdir -p "${BUILD_DIR}/package/omniroute/data"
+rm -rf "${BUILD_DIR}/package/nginx/logs"
+mkdir -p "${BUILD_DIR}/package/nginx/logs"
+touch "${BUILD_DIR}/package/nginx/logs/.gitkeep"
+rm -f "${BUILD_DIR}/package/.env" "${BUILD_DIR}/package/omniroute/.env"
+
 # Adjust default image tag in package's .env.example
 if [ "${IMAGE_TAG}" = "omniroute:bun-alpine" ]; then
     sed -i.bak 's/OMNIROUTE_DOCKERFILE=Dockerfile.v1.1/OMNIROUTE_DOCKERFILE=Dockerfile.v1.1.bun/' "${BUILD_DIR}/package/.env.example" 2>/dev/null || true

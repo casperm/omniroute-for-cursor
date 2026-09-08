@@ -8,8 +8,8 @@ services:
       dockerfile: ${OMNIROUTE_DOCKERFILE:-Dockerfile.v1.1.bun}
       args:
         - OMNIROUTE_PKG_VERSION=${OMNIROUTE_PKG_VERSION:-latest}
-    pull_policy: build
-    image: ${OMNIROUTE_IMAGE:-omniroute}:${OMNIROUTE_PKG_VERSION:-latest}
+    pull_policy: ${OMNIROUTE_PULL_POLICY:-if_not_present}
+    image: ${OMNIROUTE_IMAGE:-ghcr.io/${GITHUB_USERNAME:-your_github_username}/omniroute}:${OMNIROUTE_IMAGE_TAG:-latest}
     container_name: omniroute-core
     restart: unless-stopped
     stop_grace_period: 40s
