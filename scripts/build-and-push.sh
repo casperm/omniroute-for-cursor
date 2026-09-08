@@ -422,13 +422,6 @@ if [ -f "${ENV_FILE}" ]; then
         echo "OMNIROUTE_IMAGE_TAG=${BUILD_TAG}" >> "${ENV_FILE}"
     fi
 
-    # Update OMNIROUTE_PULL_POLICY
-    if grep -q "^OMNIROUTE_PULL_POLICY=" "${ENV_FILE}"; then
-        sed -i.bak "s|^OMNIROUTE_PULL_POLICY=.*|OMNIROUTE_PULL_POLICY=if_not_present|" "${ENV_FILE}" 2>/dev/null || true
-    else
-        echo "OMNIROUTE_PULL_POLICY=if_not_present" >> "${ENV_FILE}"
-    fi
-
     rm -f "${ENV_FILE}.bak"
     log_success ".env updated with OMNIROUTE_IMAGE_TAG=${BUILD_TAG} and OMNIROUTE_IMAGE=${IMAGE_NAME}"
 fi
